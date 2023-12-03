@@ -8,7 +8,7 @@ const client = new MongoClient('mongodb://127.0.0.1:27017/assignment4', { useNew
 
 
 const databaseName = 'assignment4';
-const collectionName = 'student';
+ const collectionName = 'student';
 
 
 router.get('/add',function(req, res, next) {

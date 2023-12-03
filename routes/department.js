@@ -7,8 +7,8 @@ const { MongoClient,ObjectId } = require('mongodb');
 const client = new MongoClient('mongodb://127.0.0.1:27017/assignment4', { useNewUrlParser: true, useUnifiedTopology: true });
 
 
-const databaseName = 'assignment4';
-const collectionName = 'department';
+   const databaseName = 'assignment4';
+   const collectionName = 'department';
 
 
 router.get('/add',function(req, res, next) {

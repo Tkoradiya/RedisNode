@@ -55,28 +55,33 @@ SmartPhone Compatible web template, free WebDesigns for Nokia, Samsung, LG, Sony
 				<div class="tables">
 					<h2 class="title1">Department List</h2>
 					<div class="panel-body widget-shadow">
-						<% if(db_rows_array.length>0) { %>	
+						
 							<table class="table" border="1">
 								<tr>
 									<th>Department Id</th>
+									<th>Student Id</th>
 									<th>Name</th>
 									<th>Action</th>
 								</tr>
-						<% for(var i=0; i<db_rows_array.length; i++) { %>
-							<tr>
-								<td><%= i+1 %></td>
-								<td><%= db_rows_array[i].dept_name %></td>
-								<td>
-									<a href='/department/edit/<%= db_rows_array[i]._id %>'>Edit</a> |
-									<a href='/department/delete/<%= db_rows_array[i]._id %>'>Delete</a> |
-									<a href='/department/show/<%= db_rows_array[i]._id %>'>Show</a>
-								</td>
-							</tr>
-						<% } %>
+								<% for (const studentId in students) { %>
+								<tr>
+								<td><%= dept_id %></td>
+								<td><%= studentId %></td>
+								 
+									<% const student = JSON.parse(students[studentId]); %>
+									<td><%= student.fname %> <%= student.lname %></td>
+									<td>
+										<a href='/department/edit/<%= dept_id %>/<%= studentId %>'>Edit</a> |
+										<a href='/department/delete/<%= dept_id %>/<%= studentId %>'>Delete</a>
+										
+									</td>
+								 
+								</tr>
+								<% } %>
+						
 						</table>
-						<% } else { %>
-							No Record Found
-						<% } %>	
+						
+						
 					</div>
 				</div>
 			</div>

@@ -1,191 +1,176 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const { createClient } = require("redis");
+var app = express.Router();
 
-const { MongoClient,ObjectId } = require('mongodb');
+let redisClient = null;
+
+// Middleware to establish Redis connection
+app.use(async (req, res, next) => {
+ redisClient = await createClient()
+    .on("error", (err) => console.log("Redis Client connection error " + err))
+    .connect();
+
+// console.log("Connected to Redis Client", redisClient);
+
+ next();
+});
 
 
-const client = new MongoClient('mongodb://127.0.0.1:27017/assignment4', { useNewUrlParser: true, useUnifiedTopology: true });
+/*app.get('/:dept_id', async (req, res) => {
+  const dept_id = req.params.dept_id;
+
+  try {
+    const students = await redisClient.get(`department:${dept_id}`);
+    console.log
+    res.render('department/department_display', { students, dept_id });
+  } catch (err) {
+    console.error('Error retrieving students:', err);
+    res.status(500).send('Error retrieving students');
+  }
+});*/
+
+app.get('/add', function (req, res, next) {
+ res.render('department/department_add');
+});
+
+app.post('/add', async (req, res) => {
+  const { student_id, fname, lname, dept_id } = req.body;
+
+ try {
+    // Check if the department hash exists
+   // const hashExists = await redisClient.exists(`department:${dept_id}`);
+
+    //if (!hashExists) {
+      await redisClient.hSet(`department:${dept_id}`, student_id, JSON.stringify({ fname, lname }));
+      res.redirect('/department/display');
+      //res.status(201).send(`Student ${student_id} added to Department ${dept_id}`);
+   // } else {
+      // Check if the student already exists in the department
+      /*const studentExists = await redisClient.exists(`department:${dept_id}`, student_id);
+
+      if (!studentExists) {
+        await redisClient.hSet(`department:${dept_id}`, student_id, JSON.stringify({ fname, lname }));
+        await redisClient.add(`department_students:${dept_id}`, student_id);
+        res.status(201).send(`Student ${student_id} added to Department ${dept_id}`);
+      } else {
+        res.status(409).send(`Student ${student_id} already exists in Department ${dept_id}`);
+      }
+    }*/
+  } catch (err) {
+    console.error('Error adding student to department:', err);
+    res.status(500).send('Error adding student to department');
+  }
+});
 
 
-   const databaseName = 'assignment4';
-   const collectionName = 'department';
+// Handle form submission to edit a student
+app.post('/edit/:dept_id/:student_id', async (req, res) => {
+  const dept_id = req.params.dept_id;
+  const student_id = req.params.student_id;
+  const { fname, lname } = req.body;
+
+  try {
+    const key = `department:${dept_id}`;
+    const studentDetails = JSON.stringify({ fname, lname });
+
+    // Check if the department hash exists
+    const hashExists = await redisClient.exists(key);
+
+    if (hashExists) {
+      // Check if the student exists in the department
+      const studentExists = await redisClient.exists(key, student_id);
+
+      if (studentExists) {
+        await redisClient.hSet(key, student_id, studentDetails);
+        res.redirect(`/department/edit/${dept_id}/${student_id}`);
+      } else {
+        res.status(404).send('Student not found');
+      }
+    } else {
+      res.status(404).send('Department not found');
+    }
+  } catch (err) {
+    console.error('Error editing student:', err);
+    res.status(500).send('Error editing student');
+  }
+});
 
 
-router.get('/add',function(req, res, next) {
-  console.log("123");
-    res.render('department/department_add');
+// Delete a student from a department
+app.post('/delete', async (req, res) => {
+  const { student_id, dept_id } = req.body;
+
+  try {
+    await redisClient.del(`department:${dept_id}`, student_id);
+    res.redirect(`/department/${dept_id}`);
+  } catch (err) {
+    console.error('Error deleting student:', err);
+    res.status(500).send('Error deleting student');
+  }
+});
+
+
+
+
+// Render the form to edit a student
+app.get('/edit/:dept_id/:student_id', async (req, res) => {
+  const dept_id = req.params.dept_id;
+  const student_id = req.params.student_id;
+
+  try {
+    const key = `department:${dept_id}`;
+    const studentDetails = await redisClient.hGet(key, student_id);
     
-  });
-// Route to handle data insertion
-router.post('/add', async (req, res) => {
-  try {
-    // Connect to the database
-    await client.connect();
-    console.log('Connected to the database');
-
-    // Access the specific database and collection
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Data to be inserted (assuming data is sent in the request body)
-    const dataToInsert = req.body;
-
-    // Insert data into the collection
-    const result = await collection.insertOne(dataToInsert);
-
-    console.log(`Inserted ${result.insertedCount} document into the collection`);
-
-    // Respond with success message
-    res.status(200).send('Data inserted successfully');
-  } catch (error) {
-    console.error('Error inserting data:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    // Close the connection when done
-    await client.close();
-    console.log('Connection closed');
-  }
-});
-
-
-
-
-router.get('/edit/:id', async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    await client.connect();
-
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Retrieve data using the provided ID
-    const result = await collection.findOne({ _id: new ObjectId(id) });
-
-    if (!result) {
-      return res.status(404).send('Not Found');
+  
+    if (studentDetails) {
+      const student = JSON.parse(studentDetails);
+      
+      res.render('department/department_edit', { dept_id, student_id, student });
+    } else {
+      res.status(404).send('Student not found');
     }
-
-    // Render an HTML page with the data for editing
-    res.render('department/department_edit', { db_rows_array: result });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    await client.close();
+  } catch (err) {
+    console.error('Error retrieving student details:', err);
+    res.status(500).send('Error retrieving student details');
   }
 });
 
-router.post('/edit/:id', async (req, res) => {
-  const id = req.params.id;
-  const updatedData = req.body;
+// Home page - Display all students in a department
+app.get('/display', async (req, res) => {
+  const dept_id = req.query.dept_id || 9;
 
   try {
-    await client.connect();
-
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Update data using the provided ID
-    const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: updatedData });
-
-    if (result.matchedCount === 0) {
-      return res.status(404).send('Not Found');
-    }
-
-    res.redirect('/department/display');
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    await client.close();
+    const students = await redisClient.hGetAll(`department:${dept_id}`);
+    console.log(students);
+    console.log(dept_id);
+    res.render('department/department_display', { students, dept_id });
+  } catch (err) {
+    console.error('Error retrieving students:', err);
+    res.status(500).send('Error retrieving students');
   }
 });
 
 
-// Define the route to display data
-router.get('/display', async (req, res) => {
-  try {
-    
-    await client.connect();
-    console.log('Connected to the database');
-
-    // Access the specific database and collection
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Retrieve all documents from the collection
-    const cursor = collection.find();
-
-    // Convert documents to an array
-    const documents = await cursor.toArray();
-    res.render('department/department_display', { db_rows_array: documents});
-    // Close the connection
-    await client.close();
-    console.log('Connection closed');
-
-    // Send the retrieved data as JSON response
-    //res.json(documents);
-  } catch (error) {
-    console.error('Error retrieving and displaying data:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-
-
-router.get('/show/:id', async (req, res) => {
-  const id = req.params.id;
+// Delete student
+app.get('/delete/:dept_id/:student_id', async (req, res) => {
+  const dept_id = req.params.dept_id;
+  const student_id = req.params.student_id;
 
   try {
-    await client.connect();
-
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Retrieve data using the provided ID
-    const result = await collection.findOne({ _id: new ObjectId(id) });
-
-    if (!result) {
-      return res.status(404).send('Not Found');
-    }
-
-    // Render an HTML page with the data for editing
-    res.render('department/department_show', { db_rows_array: result });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    await client.close();
-  }
-});
- 
-router.get('/delete/:id', async (req, res) => {
-  try {
-    // Connect to the database
-    await client.connect();
-
-    // Access the specific database and collection
-    const database = client.db(databaseName);
-    const collection = database.collection(collectionName);
-
-    // Extract the id parameter from the request
-    const id = req.params.id;
-
-    // Create a MongoDB ObjectId from the id
-    const objectId = new ObjectId(id);
-
-    // Delete the document by its ObjectId
-    const result = await collection.deleteOne({ _id: objectId });
-
-    res.redirect('/department/display');
-  } catch (error) {
-    console.error('Error deleting data:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  } finally {
-    // Close the connection when done
-    await client.close();
+    await redisClient.hDel(`department:${dept_id}`, student_id);
+    res.redirect(`/?dept_id=${dept_id}`);
+  } catch (err) {
+    console.error('Error deleting student:', err);
+    res.status(500).send('Error deleting student');
   }
 });
 
-module.exports = router;
+// Middleware to close Redis connection
+app.use(async (req, res, next) => {
+ await redisClient.disconnect();
+ console.log("Disconnected from Redis Client");
+
+ next();
+});
+
+module.exports = app;

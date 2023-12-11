@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>Department Add</title>
+<title>Student Add</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="keywords" content="Glance Design Dashboard Responsive web template, Bootstrap Web Templates, Flat Web Templates, Android Compatible web template, 
@@ -53,24 +53,38 @@ SmartPhone Compatible web template, free WebDesigns for Nokia, Samsung, LG, Sony
 				<div class="forms">
 					<div class="form-grids row widget-shadow" data-example-id="basic-forms"> 
 						<div class="form-title">
-							<h4>Department Add Form:</h4>
+							<h4>Project Form :</h4>
 							<% if (typeof success !== "undefined") { %>
 								<div class="alert alert-success">
 									<%= success %>
-								</div> 
+								</div> 		
 								<% } %>
 						</div>
 						<div class="form-body">
-							<form method="post"> 
+							<form action="/department/add" method="post"> 
 								<table>
-									<div class="form-group"> 
-										<label for="exampleInputName1">Name</label> 
-										<input type="text" name="name" class="form-control" id="exampleInputName1" placeholder="Enter Name" required>  
+									
+                                    <div class="form-group"> 
+										<label for="exampleInputName1">sTUDENT ID</label> 
+										<input type="text" name="student_id" class="form-control" id="exampleInputName1" placeholder="Enter student id" required>  
 									</div> 
-									<div class="form-group">									
+                                
+                                    <div class="form-group">
+										<label for="exampleInputPrice1">FIRST NAME</label>
+										<input type="text" name="fname" class="form-control" id="exampleInputPrice1" placeholder="Enter first Name" required> 
+                                    </div> 
+                                    <div class="form-group">
+										<label for="exampleInputPrice1">LAST NAME</label>
+										<input type="text" name="lname" class="form-control" id="exampleInputPrice1" placeholder="Enter last Name" required> 
+									</div>
+									<div class="form-group"> 
+										<label for="exampleInputName1">Department ID</label> 
+										<input type="text" name="dept_id" class="form-control" id="exampleInputName1" placeholder="Enter department id" required>  
+									</div> 
+																		
 									</div> 
 										<input type="submit">
-										<input type="button" value="Display" onclick="window.location='display'">
+										
 								</table>
 							</form> 
 						</div>
@@ -78,12 +92,10 @@ SmartPhone Compatible web template, free WebDesigns for Nokia, Samsung, LG, Sony
 				</div>
 			</div>
 		</div>
-	
 			<!--footer-->
 			<%- include('../footer'); -%>
 
 			<!--//footer-->
-        
 	</div>
 	
 	<!-- side nav js -->
@@ -125,5 +137,3 @@ SmartPhone Compatible web template, free WebDesigns for Nokia, Samsung, LG, Sony
    
 </body>
 </html>
-
-					
